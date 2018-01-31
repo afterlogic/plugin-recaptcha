@@ -6,23 +6,24 @@
 	
 	function ShowRecaptcha()
 	{
-		if (window.Recaptcha)
+		if (window.grecaptcha)
 		{
-			if (bShown)
-			{
-				window.Recaptcha.reload();
-			}
-			else
+			if (!bShown)
 			{
 				var
 					oSettings = AfterLogicApi.getPluginSettings('ReCaptcha'),
 					sKey = oSettings ? oSettings.PublicKey : ''
 				;
 				
-				window.Recaptcha.create(sKey, 'recaptcha-place', {
-					'theme': 'white',
+				window.grecaptcha.render('recaptcha-place', {
+					'sitekey': sKey,
+					'theme': 'light',
 					'lang': AfterLogicApi.getSetting('DefaultLanguageShort')
 				});
+			}
+			else
+			{
+				window.grecaptcha.reset();
 			}
 
 			bShown = true;
@@ -31,9 +32,10 @@
 	
 	function StartRecaptcha()
 	{
-		if (!window.Recaptcha)
+		if (!window.grecaptcha)
 		{
-			$.getScript('//www.google.com/recaptcha/api/js/recaptcha_ajax.js', ShowRecaptcha);
+			window.ShowRecaptcha = ShowRecaptcha;
+			$.getScript('https://www.google.com/recaptcha/api.js?onload=ShowRecaptcha&render=explicit');
 		}
 		else
 		{
@@ -54,12 +56,11 @@
 	});
 	
 	AfterLogicApi.addPluginHook('ajax-default-request', function (sAction, oParameters) {
-		if ('SystemLogin' === sAction && oParameters && bShown && window.Recaptcha)
+		if ('SystemLogin' === sAction && oParameters && bShown && window.grecaptcha)
 		{
 			oParameters['CustomRequestData'] = oParameters['CustomRequestData'] || {};
 			oParameters['CustomRequestData'] = {
-				'RecaptchaChallengeField': window.Recaptcha.get_challenge(),
-				'RecaptchaResponseField': window.Recaptcha.get_response()
+				'RecaptchaResponseField': window.grecaptcha.getResponse()
 			};
 		}
 	});
@@ -69,11 +70,7 @@
 		{
 			if (!oData || !oData['Result'])
 			{
-				if (bShown && window.Recaptcha)
-				{
-					window.Recaptcha.reload();
-				}
-				else if (oData && oData['Captcha'])
+				if(oData && oData['Captcha'])
 				{
 					StartRecaptcha();
 				}

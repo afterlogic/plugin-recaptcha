@@ -1,16 +1,5 @@
 <?php
 
-/*
-The MIT License (MIT)
-Copyright (c) 2016, Afterlogic Corp.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 class_exists('CApi') or die();
 
 class CRecaptchaPlugin extends AApiPlugin
@@ -44,11 +33,11 @@ class CRecaptchaPlugin extends AApiPlugin
 	private function captchaLocalLimit($bAddToLimit = false, $bClear = false)
 	{
 		$iResult = 0;
-		$oApiIntegrator = CApi::Manager('integrator');
+		$oApiIntegrator =\CApi::Manager('integrator');
 		if ($oApiIntegrator)
 		{
 			$sKey = 'Login/Captcha/Limit/'.$oApiIntegrator->GetCsrfToken();
-			$oCacher = CApi::Cacher();
+			$oCacher =\CApi::Cacher();
 			if ($oCacher->IsInited())
 			{
 				if ($bClear)
@@ -99,12 +88,12 @@ class CRecaptchaPlugin extends AApiPlugin
 
 	public function PluginWebmailLoginCustomData($mCustomData)
 	{
-		$sPublicKey = CApi::GetConf('plugins.recaptcha.options.public-key', '');
-		$sPrivateKey = CApi::GetConf('plugins.recaptcha.options.private-key', '');
+		$sPublicKey =\CApi::GetConf('plugins.recaptcha.options.public-key', '');
+		$sPrivateKey =\CApi::GetConf('plugins.recaptcha.options.private-key', '');
 
 		if (!empty($sPublicKey) && !empty($sPrivateKey))
 		{
-			$iLimitCaptcha = (int) CApi::GetConf('plugins.recaptcha.options.limit-count', 0);
+			$iLimitCaptcha = (int)\CApi::GetConf('plugins.recaptcha.options.limit-count', 0);
 			if (0 < $iLimitCaptcha)
 			{
 				$GLOBALS['P7_RECAPTCHA_LIMIT_CHANGE'] = true;
@@ -117,7 +106,7 @@ class CRecaptchaPlugin extends AApiPlugin
 			}
 			else if (0 >= $iLimitCaptcha)
 			{
-				if (empty($mCustomData['RecaptchaChallengeField']) || empty($mCustomData['RecaptchaResponseField']))
+				if (empty($mCustomData['RecaptchaResponseField']))
 				{
 					$GLOBALS['P7_RECAPTCHA_ATTRIBUTE_ON_ERROR'] = true;
 					throw new \ProjectCore\Exceptions\ClientException(\ProjectCore\Notifications::CaptchaError);
@@ -125,14 +114,10 @@ class CRecaptchaPlugin extends AApiPlugin
 
 				include_once 'lib/recaptchalib.php';
 
-				$oResp = \recaptcha_check_answer(
-					$sPrivateKey,
-					isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '',
-					(string) $mCustomData['RecaptchaChallengeField'],
-					(string) $mCustomData['RecaptchaResponseField']
-				);
+				$oRecaptcha = new \ReCaptcha($sPrivateKey);
+				$oResp = $oRecaptcha->verifyResponse($_SERVER['SERVER_ADDR'], (string) $mCustomData['RecaptchaResponseField']);
 
-				if (!$oResp || !isset($oResp->is_valid) || !$oResp->is_valid)
+				if (!$oResp || !isset($oResp->success) || !$oResp->success)
 				{
 					$GLOBALS['P7_RECAPTCHA_ATTRIBUTE_ON_ERROR'] = true;
 					throw new \ProjectCore\Exceptions\ClientException(\ProjectCore\Notifications::CaptchaError);
@@ -146,8 +131,8 @@ class CRecaptchaPlugin extends AApiPlugin
 		if (isset($aAppData['Auth']) && !$aAppData['Auth'] &&
 			isset($aAppData['Plugins']) && is_array($aAppData['Plugins']))
 		{
-			$sPublicKey = CApi::GetConf('plugins.recaptcha.options.public-key', '');
-			$sPrivateKey = CApi::GetConf('plugins.recaptcha.options.private-key', '');
+			$sPublicKey =\CApi::GetConf('plugins.recaptcha.options.public-key', '');
+			$sPrivateKey =\CApi::GetConf('plugins.recaptcha.options.private-key', '');
 
 			if (!empty($sPublicKey) && !empty($sPrivateKey))
 			{
@@ -156,7 +141,7 @@ class CRecaptchaPlugin extends AApiPlugin
 					'PublicKey' => $sPublicKey,
 				);
 
-				$iLimitCaptcha = (int) CApi::GetConf('plugins.recaptcha.options.limit-count', 0);
+				$iLimitCaptcha = (int)\CApi::GetConf('plugins.recaptcha.options.limit-count', 0);
 				if (0 === $iLimitCaptcha)
 				{
 					$aReCaptcha['ShowOnStart'] = true;
