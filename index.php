@@ -122,12 +122,12 @@ class CRecaptchaPlugin extends AApiPlugin
 					throw new \ProjectCore\Exceptions\ClientException(\ProjectCore\Notifications::CaptchaError);
 				}
 
-				include_once 'lib/recaptchalib.php';
+				include_once 'lib/autoload.php';
 
-				$oRecaptcha = new \ReCaptcha($sPrivateKey);
-				$oResp = $oRecaptcha->verifyResponse($_SERVER['SERVER_ADDR'], (string) $mCustomData['RecaptchaResponseField']);
+				$oRecaptcha = new \ReCaptcha\ReCaptcha($sPrivateKey, new \ReCaptcha\RequestMethod\CurlPost());
+				$oResp = $oRecaptcha->verify((string) $mCustomData['RecaptchaResponseField']);
 
-				if (!$oResp || !isset($oResp->success) || !$oResp->success)
+				if (!$oResp || !$oResp->isSuccess())
 				{
 					$GLOBALS['P7_RECAPTCHA_ATTRIBUTE_ON_ERROR'] = true;
 					throw new \ProjectCore\Exceptions\ClientException(\ProjectCore\Notifications::CaptchaError);

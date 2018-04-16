@@ -17,7 +17,6 @@
 				
 				window.grecaptcha.render('recaptcha-place', {
 					'sitekey': sKey,
-					'theme': 'light',
 					'lang': AfterLogicApi.getSetting('DefaultLanguageShort')
 				});
 			}
